@@ -17,8 +17,10 @@ omarchy-shell shell rescanPlugins
 omarchy plugin enable pranavbabu.flashcards
 ```
 
-The first build downloads crates and takes about a minute. Until it is done,
-the panel shows "Backend not built".
+The first build downloads crates and takes about a minute (Rust 1.88 or newer).
+Until it is done, the panel shows "Backend not built". If you installed from the
+marketplace or with `omarchy plugin add`, run `cargo build --release` inside
+`~/.config/omarchy/plugins/pranavbabu.flashcards` once.
 
 The folder name must stay `pranavbabu.flashcards`. If the widget does not show,
 run `omarchy restart shell`. Enabling the plugin adds one entry to

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "pranavbabu.flashcards",
   "name": "Flashcards",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "pranavbabu",
   "license": "MIT",
   "description": "Anki-style spaced-repetition word trainer in the Omarchy bar, with pronunciation audio and translations. Norwegian by default, any language you add.",

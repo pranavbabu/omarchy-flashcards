@@ -2,6 +2,7 @@
 name = "flashcards"
 version = "0.2.0"
 edition = "2024"
+rust-version = "1.88"
 description = "Spaced-repetition backend for the Omarchy flashcards plugin"
 license = "MIT"
 publish = false
