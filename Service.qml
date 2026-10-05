@@ -31,7 +31,11 @@ Item {
     property var activeDeck: null
     readonly property string configuredDeck: String(setting("deck", "Norwegian"))
     // The deck new cards are added to and imported into.
-    readonly property string deck: activeDeck !== null && activeDeck !== "*" ? activeDeck : configuredDeck
+    readonly property string deck: {
+        if (activeDeck !== null && activeDeck !== "*") return activeDeck;
+        for (var i = 0; i < decks.length; i++) if (decks[i].name === configuredDeck) return configuredDeck;
+        return decks.length > 0 ? decks[0].name : configuredDeck;
+    }
     // The deck being studied; "" studies every deck.
     readonly property string studyDeck: activeDeck === null ? configuredDeck : (activeDeck === "*" ? "" : activeDeck)
     readonly property string studyTitle: studyDeck === "" ? "All decks" : studyDeck
@@ -60,8 +64,8 @@ Item {
         return decodeURIComponent(Qt.resolvedUrl(name).toString().replace(/^file:\/\//, ""));
     }
 
-    function run(args, done, started, seq) {
-        queue = queue.concat([{ args: args, done: done || null, started: started || null, seq: seq }]);
+    function run(args, done, started, seq, key) {
+        queue = queue.concat([{ args: args, done: done || null, started: started || null, seq: seq, key: key }]);
         pump();
     }
 
@@ -91,15 +95,17 @@ Item {
     }
 
     function refresh() {
-        // A pending refresh queued after the latest answer already covers this one.
-        for (var i = 0; i < queue.length; i++) if (queue[i].args[0] === "next" && queue[i].seq === answerSeq) return;
+        var args = ["next", "--new-per-day", String(newPerDay), "--count", String(queueSize)];
+        if (studyDeck !== "") args = args.concat(["--deck", studyDeck]);
+        var key = args.join("\u0001");
+        // A pending refresh for the same deck, queued after the latest answer, already covers this one.
+        for (var i = 0; i < queue.length; i++) if (queue[i].key === key && queue[i].seq === answerSeq) return;
         // Answers queued before this job are saved when it runs. Answers made later are not,
         // so applyQueue must drop those cards from the result.
         var seq = answerSeq;
-        var args = ["next", "--new-per-day", String(newPerDay), "--count", String(queueSize)];
-        if (studyDeck !== "") args = args.concat(["--deck", studyDeck]);
+        var deckAtStart = studyDeck;
         run(args, function(out) {
-            if (!out || out.ok === false) return;
+            if (!out || out.ok === false || studyDeck !== deckAtStart) return;
             applyQueue(out.cards || [], seq);
             counts = out.counts;
             due = out.due;
@@ -107,7 +113,7 @@ Item {
             nextDueIn = out.next_due_in;
             newWaiting = out.new_waiting;
             loaded = true;
-        }, null, seq);
+        }, null, seq, key);
     }
 
     // Keep the card on screen first, drop cards answered while this request ran, and
@@ -143,7 +149,16 @@ Item {
     }
 
     function useDeck(name) {
+        // Switch on screen at once; the choice is saved in the background.
+        activeDeck = name;
         run(["use-deck", name], function(out) { if (out && out.ok) loadDecks(); });
+    }
+
+    // Step through "All decks" and each deck, wrapping around.
+    function cycleDeck(direction) {
+        var names = ["*"].concat(decks.map(function(d) { return d.name; }));
+        var current = names.indexOf(studyDeck === "" ? "*" : studyDeck);
+        useDeck(names[(Math.max(0, current) + direction + names.length) % names.length]);
     }
 
     function deleteDeck(name) {

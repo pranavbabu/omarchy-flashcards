@@ -166,6 +166,8 @@ Panel {
         else if (key === "u") svc.undo();
         else if (key === "a") root.showMode("add");
         else if (key === "d") root.showMode("decks");
+        else if (t === "[") svc.cycleDeck(-1);
+        else if (t === "]") svc.cycleDeck(1);
         else if (key === "r") root.showMode("review");
       }
 
@@ -178,12 +180,27 @@ Panel {
           width: parent.width
           spacing: Style.space(8)
 
-          Text {
+          Button {
+            iconText: String.fromCodePoint(0xF0141)
+            tooltipText: "Previous deck  [ [ ]"
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onClicked: svc.cycleDeck(-1)
+          }
+          Button {
             text: svc.studyTitle
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.title
-            font.bold: true
+            tooltipText: "Next deck  [ ] ]"
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            fontSize: Style.font.title
+            onClicked: svc.cycleDeck(1)
+          }
+          Button {
+            iconText: String.fromCodePoint(0xF0142)
+            tooltipText: "Next deck  [ ] ]"
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onClicked: svc.cycleDeck(1)
           }
           Item { Layout.fillWidth: true }
           Text {
@@ -322,7 +339,7 @@ Panel {
               text: modelData.name + "  (" + modelData.mb + " MB)"
               foreground: root.foreground
               fontFamily: root.fontFamily
-              onClicked: pathField.text = modelData.path
+              onClicked: { pathField.text = modelData.path; deckField.text = modelData.name.replace(/\.[^.]+$/, "").replace(/_+/g, " "); }
             }
           }
           TextField {
@@ -491,6 +508,13 @@ Panel {
           width: parent.width
           spacing: Style.space(8)
 
+          Text {
+            width: parent.width
+            text: "Adds to deck: " + svc.deck
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
           TextField {
             id: frontField
             width: parent.width
@@ -553,7 +577,7 @@ Panel {
         Text {
           visible: root.mode === "review"
           width: parent.width
-          text: "space show/pass  1-4 rate (f fail, p pass, e easy)  s sound  u undo  a add  d decks  esc close"
+          text: "space show/pass  1-4 rate (f fail, p pass, e easy)  s sound  u undo  a add  d decks  [ ] switch deck  esc close"
           color: root.dim
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption

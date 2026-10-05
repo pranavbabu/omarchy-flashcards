@@ -41,6 +41,7 @@ in `~/.local/share/omarchy-flashcards/`. Delete that folder to remove them.
 | `s` | play pronunciation |
 | `u` | undo last answer |
 | `a` | add a word |
+| `[` / `]` | previous / next deck (All decks, then each deck) |
 | `d` / `r` | decks tab / review tab |
 | `esc` | close |
 
@@ -50,6 +51,9 @@ limit is reached.
 
 ## Decks and import
 
+- Keep each source in its own deck. Switch decks while practising with the
+  arrows next to the deck name in the panel header, or with `[` and `]`.
+  Each deck has its own daily limit of new cards.
 - **Decks** tab: choose the deck to study (or all decks), delete a deck, and
   import a file. Files in `~/Downloads` are listed; click one, name the deck,
   press Import.

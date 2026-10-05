@@ -141,6 +141,27 @@ class Cli(unittest.TestCase):
         out = self.run_cli("decks")
         self.assertEqual(([d["name"] for d in out["decks"]], out["active"]), (["Norwegian"], None))
 
+    def test_new_card_limit_is_per_deck(self):
+        for deck in ("A", "B"):
+            for i in range(3):
+                self.run_cli("add", "%s%d" % (deck, i), "x", "--deck", deck)
+        cid = self.run_cli("next", "--deck", "A", "--new-per-day", "1")["card"]["id"]
+        self.run_cli("answer", str(cid), "4")
+        self.assertEqual(self.run_cli("next", "--deck", "A", "--new-per-day", "1")["counts"]["new"], 0)
+        self.assertEqual(self.run_cli("next", "--deck", "B", "--new-per-day", "1")["counts"]["new"], 1)
+        allq = self.run_cli("next", "--new-per-day", "1", "--count", "10")
+        self.assertEqual((allq["counts"]["new"], [c["front"] for c in allq["cards"]]), (1, ["B0"]))
+
+    def test_rename_deck_moves_cards_and_active_deck(self):
+        self.run_cli("add", "hund", "dog", "--deck", "A")
+        self.run_cli("add", "katt", "cat", "--deck", "B")
+        self.run_cli("use-deck", "A")
+        self.run_cli("rename-deck", "A", "Animals")
+        out = self.run_cli("decks")
+        self.assertEqual(([d["name"] for d in out["decks"]], out["active"]), (["Animals", "B"], "Animals"))
+        self.assertEqual(self.run_cli("next", "--deck", "Animals")["card"]["front"], "hund")
+        self.assertIn("already exists", self.run_cli("rename-deck", "B", "Animals", ok=False)["error"])
+
     def test_find_files_lists_importable_files_newest_first(self):
         for name in ("a.tsv", "b.apkg", "ignore.pdf"):
             open(os.path.join(self.tmp.name, name), "w").close()

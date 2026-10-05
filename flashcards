@@ -174,9 +174,15 @@ def day_start(now):
     return int(time.mktime((t.tm_year, t.tm_mon, t.tm_mday, 0, 0, 0, 0, 0, -1)))
 
 
-def new_budget(db, now, limit):
-    seen = db.execute("SELECT COUNT(*) FROM revlog WHERE state_before = ? AND ts >= ?",
-                      (NEW, day_start(now))).fetchone()[0]
+def deck_names(db, deck):
+    return [deck] if deck else [r[0] for r in db.execute("SELECT name FROM decks ORDER BY name")]
+
+
+def new_budget(db, now, limit, deck):
+    """New cards still allowed today in one deck; each deck has its own daily limit."""
+    seen = db.execute("SELECT COUNT(*) FROM revlog r JOIN cards c ON c.id = r.card_id "
+                      "WHERE r.state_before = ? AND r.ts >= ? AND c.deck = ?",
+                      (NEW, day_start(now), deck)).fetchone()[0]
     return max(0, limit - seen)
 
 
@@ -184,9 +190,13 @@ def counts(db, now, deck, limit):
     where, args = ("AND deck = ?", [deck]) if deck else ("", [])
     q = lambda extra, a: db.execute(
         "SELECT COUNT(*) FROM cards WHERE suspended = 0 %s %s" % (where, extra), args + a).fetchone()[0]
-    new_total = q("AND state = ?", [NEW])
+    new_count = 0
+    for name in deck_names(db, deck):
+        total = db.execute("SELECT COUNT(*) FROM cards WHERE suspended = 0 AND state = ? AND deck = ?",
+                           (NEW, name)).fetchone()[0]
+        new_count += min(total, new_budget(db, now, limit, name))
     return {
-        "new": min(new_total, new_budget(db, now, limit)),
+        "new": new_count,
         "learning": q("AND state IN (?, ?) AND due <= ?", [LEARNING, RELEARNING, now]),
         "review": q("AND state = ? AND due <= ?", [REVIEW, now]),
     }
@@ -205,7 +215,11 @@ def pick_queue(db, now, deck, limit, count):
 
     take("AND state IN (?, ?) AND due <= ? ORDER BY due", [LEARNING, RELEARNING, now], count)
     take("AND state = ? AND due <= ? ORDER BY due", [REVIEW, now], count - len(rows))
-    take("AND state = ? ORDER BY id", [NEW], min(count - len(rows), new_budget(db, now, limit)))
+    for name in deck_names(db, deck):
+        room = min(count - len(rows), new_budget(db, now, limit, name))
+        if room > 0:
+            rows.extend(db.execute("SELECT * FROM cards WHERE suspended = 0 AND state = ? AND deck = ? ORDER BY id LIMIT ?",
+                                   (NEW, name, room)).fetchall())
     if not rows:
         take("AND state IN (?, ?) AND due <= ? ORDER BY due", [LEARNING, RELEARNING, now + LEARN_AHEAD], count)
     return rows
@@ -537,6 +551,17 @@ def cmd_delete_deck(a, db, now):
     return {"ok": True, "deleted": len(ids)}
 
 
+def cmd_rename_deck(a, db, now):
+    if not db.execute("SELECT 1 FROM decks WHERE name = ?", (a.old,)).fetchone():
+        raise CliError("no deck named %s" % a.old)
+    if db.execute("SELECT 1 FROM decks WHERE name = ?", (a.new,)).fetchone():
+        raise CliError("a deck named %s already exists" % a.new)
+    db.execute("UPDATE decks SET name = ? WHERE name = ?", (a.new, a.old))
+    db.execute("UPDATE cards SET deck = ? WHERE deck = ?", (a.new, a.old))
+    db.execute("UPDATE meta SET value = ? WHERE key = 'deck' AND value = ?", (a.new, a.old))
+    return {"ok": True}
+
+
 def cmd_find_files(a, db, now):
     import glob
     found = []
@@ -716,6 +741,11 @@ def build_parser():
     s = sub.add_parser("delete-deck", help="delete a deck and all of its cards")
     s.add_argument("name")
     s.set_defaults(fn=cmd_delete_deck)
+
+    s = sub.add_parser("rename-deck")
+    s.add_argument("old")
+    s.add_argument("new")
+    s.set_defaults(fn=cmd_rename_deck)
 
     s = sub.add_parser("find-files", help="list importable files in a folder")
     s.add_argument("--dir", default="~/Downloads")
