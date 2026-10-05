@@ -1,0 +1,28 @@
+[package]
+name = "flashcards"
+version = "0.2.0"
+edition = "2024"
+description = "Spaced-repetition backend for the Omarchy flashcards plugin"
+license = "MIT"
+publish = false
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+clap = { version = "4", features = ["derive"] }
+csv = "1"
+html-escape = "0.2"
+percent-encoding = "2"
+regex = "1"
+rusqlite = { version = "0.40", features = ["bundled"] }
+ruzstd = "0.9"
+serde_json = { version = "1", features = ["preserve_order"] }
+sha1 = "0.11"
+tempfile = "3"
+ureq = "3"
+zip = { version = "8", default-features = false, features = ["deflate"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+codegen-units = 1

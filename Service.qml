@@ -74,7 +74,7 @@ Item {
         _current = queue[0];
         queue = queue.slice(1);
         if (_current.started) _current.started();
-        cli.command = ["python3", path("flashcards")].concat(_current.args);
+        cli.command = [path("flashcards")].concat(_current.args);
         cli.running = true;
     }
 
@@ -210,7 +210,7 @@ Item {
 
     function play() {
         if (!card || audio.running) return;
-        audio.command = ["python3", path("flashcards"), "audio", String(card.id), "--play"];
+        audio.command = [path("flashcards"), "audio", String(card.id), "--play"];
         audio.running = true;
     }
 

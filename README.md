@@ -6,13 +6,19 @@ answer, hear the pronunciation, then pass or fail the card.
 
 ## Install
 
-Requires Omarchy with shell plugins, `python3`, and `mpv` (or `ffplay`).
+Requires Omarchy with shell plugins, a Rust toolchain (`cargo`, to build the
+backend once), and `mpv` (or `ffplay`) for audio.
 
 ```bash
 git clone https://github.com/pranavbabu/omarchy-flashcards ~/.config/omarchy/plugins/pranavbabu.flashcards
+cd ~/.config/omarchy/plugins/pranavbabu.flashcards
+cargo build --release
 omarchy-shell shell rescanPlugins
 omarchy plugin enable pranavbabu.flashcards
 ```
+
+The first build downloads crates and takes about a minute. Until it is done,
+the panel shows "Backend not built".
 
 The folder name must stay `pranavbabu.flashcards`. If the widget does not show,
 run `omarchy restart shell`. Enabling the plugin adds one entry to
@@ -64,14 +70,15 @@ limit is reached.
 
 - In the panel: press `a`.
 - Anki deck: `./flashcards import deck.apkg` (text, example sentences and
-  audio are imported; review history is not).
+  audio are imported; review history is not). Old and new Anki export formats
+  both work.
 - Text file: `./flashcards import words.tsv` with columns
   `front`, `back`, `note`, `audio`.
 - Skip easy words: `./flashcards skip-easy` hides new cards that only use the
   800 most frequent words (needs a frequency deck). `--max-rank N` changes
   the cutoff, `unsuspend` undoes it.
 
-Run `flashcards` from the plugin folder, or add it to your `PATH`.
+Run `./flashcards` from the plugin folder, or add it to your `PATH`.
 
 ## Audio and privacy
 
@@ -89,11 +96,12 @@ Set in the widget entry of `~/.config/omarchy/shell.json`: `deck`, `lang`
 
 ## Dependencies and license
 
-`python3` (3.14 or later for newer Anki exports), `mpv` or `ffplay` for
-audio, `espeak-ng` optional. No Python packages. MIT license, see `LICENSE`.
+`cargo` and `rustc` to build the backend (all Rust dependencies are fetched
+by `cargo`, including a bundled SQLite), `mpv` or `ffplay` for audio,
+`espeak-ng` optional. MIT license, see `LICENSE`.
 
 ## Tests
 
 ```bash
-python3 -m unittest discover -s tests
+cargo test --release
 ```
