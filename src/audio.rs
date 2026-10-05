@@ -3,11 +3,9 @@
 use crate::db::{self, Card};
 use crate::{CliError, Result};
 use sha1::{Digest, Sha1};
-use std::io::Read;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::time::Duration;
 
 pub fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
@@ -36,31 +34,49 @@ pub fn audio_path(card: &Card, lang: &str) -> PathBuf {
     db::audio_dir().join(format!("{lang}-{key}.mp3"))
 }
 
+/// Download speech for `text` with `curl`, so the binary carries no TLS stack of its own.
 fn fetch_tts(text: &str, lang: &str, dest: &Path) -> Result<()> {
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .timeout_global(Some(Duration::from_secs(15)))
-        .build()
-        .into();
-    let spoken: String = text.chars().take(200).collect();
-    let mut response = agent
-        .get("https://translate.google.com/translate_tts")
-        .header("User-Agent", "Mozilla/5.0")
-        .query("ie", "UTF-8")
-        .query("client", "tw-ob")
-        .query("tl", lang)
-        .query("q", &spoken)
-        .call()
-        .map_err(|e| CliError(e.to_string()))?;
-    let mut data = Vec::new();
-    response.body_mut().as_reader().read_to_end(&mut data)?;
-    if data.len() < 200 {
-        return Err(CliError("text-to-speech returned no audio".into()));
-    }
+    let curl = which("curl").ok_or_else(|| CliError("curl is not installed".into()))?;
     if let Some(dir) = dest.parent() {
         std::fs::create_dir_all(dir)?;
     }
     let tmp = PathBuf::from(format!("{}.part", dest.display()));
-    std::fs::write(&tmp, data)?;
+    let spoken: String = text.chars().take(200).collect();
+    let status = Command::new(curl)
+        .args([
+            "--silent",
+            "--fail",
+            "--location",
+            "--max-time",
+            "15",
+            "--get",
+            "--user-agent",
+            "Mozilla/5.0",
+        ])
+        .args([
+            "--data-urlencode",
+            "ie=UTF-8",
+            "--data-urlencode",
+            "client=tw-ob",
+        ])
+        .args([
+            "--data-urlencode",
+            &format!("tl={lang}"),
+            "--data-urlencode",
+            &format!("q={spoken}"),
+        ])
+        .arg("--output")
+        .arg(&tmp)
+        .arg("https://translate.google.com/translate_tts")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+    let size = std::fs::metadata(&tmp).map(|m| m.len()).unwrap_or(0);
+    if !status.success() || size < 200 {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(CliError("text-to-speech returned no audio".into()));
+    }
     std::fs::rename(tmp, dest)?;
     Ok(())
 }

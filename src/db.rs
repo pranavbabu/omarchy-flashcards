@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS cards (
   UNIQUE (deck, front)
 );
 CREATE INDEX IF NOT EXISTS cards_due ON cards (suspended, state, due);
+CREATE INDEX IF NOT EXISTS cards_deck ON cards (deck, suspended, state, due);
 CREATE TABLE IF NOT EXISTS revlog (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   card_id INTEGER NOT NULL,

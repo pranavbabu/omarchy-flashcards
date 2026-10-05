@@ -7,7 +7,7 @@ answer, hear the pronunciation, then pass or fail the card.
 ## Install
 
 Requires Omarchy with shell plugins, a Rust toolchain (`cargo`, to build the
-backend once), and `mpv` (or `ffplay`) for audio.
+backend once), `curl` (to download pronunciation audio), and `mpv` (or `ffplay`) for audio.
 
 ```bash
 git clone https://github.com/pranavbabu/omarchy-flashcards ~/.config/omarchy/plugins/pranavbabu.flashcards
@@ -99,7 +99,7 @@ Set in the widget entry of `~/.config/omarchy/shell.json`: `deck`, `lang`
 ## Dependencies and license
 
 `cargo` and `rustc` to build the backend (all Rust dependencies are fetched
-by `cargo`, including a bundled SQLite), `mpv` or `ffplay` for audio,
+by `cargo`, including a bundled SQLite), `curl` for audio downloads, `mpv` or `ffplay` for playback,
 `espeak-ng` optional. MIT license, see `LICENSE`.
 
 ## Tests
