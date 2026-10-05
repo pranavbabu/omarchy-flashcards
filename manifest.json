@@ -23,6 +23,7 @@
       "lang": "no",
       "barLabel": "Word",
       "newPerDay": 20,
+      "queueSize": 20,
       "autoplay": true,
       "popupEveryMinutes": 0
     },
@@ -31,6 +32,7 @@
       { "key": "lang", "type": "string", "label": "Speech language code", "defaultValue": "no", "description": "Language code for pronunciation audio, for example no, sv, de, fr, uk." },
       { "key": "barLabel", "type": "enum", "label": "Bar label", "options": ["Word", "Count", "Icon"], "defaultValue": "Word", "description": "Show the current word, the number of due cards, or only the icon." },
       { "key": "newPerDay", "type": "integer", "label": "New cards per day", "min": 0, "max": 500, "step": 5, "defaultValue": 20 },
+      { "key": "queueSize", "type": "integer", "label": "Cards kept ready", "min": 1, "max": 100, "step": 5, "defaultValue": 20, "description": "How many upcoming cards the panel holds in memory, so the next card appears instantly." },
       { "key": "autoplay", "type": "boolean", "label": "Play pronunciation automatically", "defaultValue": true, "description": "Play the audio when a card appears in the open panel." },
       { "key": "popupEveryMinutes", "type": "integer", "label": "Open the panel every N minutes (0 = never)", "min": 0, "max": 240, "step": 5, "defaultValue": 0, "description": "When cards are due, open the panel on this interval so you can answer without clicking the bar." }
     ]

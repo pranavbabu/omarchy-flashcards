@@ -17,6 +17,8 @@ Panel {
   readonly property string glyphSound: String.fromCodePoint(0xF057E)
   readonly property string glyphAdd: String.fromCodePoint(0xF0415)
   readonly property string glyphUndo: String.fromCodePoint(0xF054C)
+  readonly property string glyphTrash: String.fromCodePoint(0xF01B4)
+  property string confirmDelete: ""
 
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property color urgent: bar ? bar.urgent : Color.urgent
@@ -72,10 +74,20 @@ Panel {
     });
   }
 
+  function startImport() {
+    var path = pathField.text.trim();
+    var deckName = deckField.text.trim();
+    if (path === "" || deckName === "" || svc.busy) return;
+    svc.importFile(path, deckName, function(ok) { if (ok) pathField.text = ""; });
+  }
+
   function showMode(next) {
     mode = next;
+    confirmDelete = "";
     if (next === "add") Qt.callLater(function() { frontField.forceActiveFocus(); });
     else Qt.callLater(function() { keyCatcher.forceActiveFocus(); });
+    if (next === "decks") { svc.loadDecks(); svc.findFiles(); deckField.text = svc.deck; }
+    if (next === "review") { revealed = false; svc.refresh(); }
   }
 
   onCardIdChanged: {
@@ -141,7 +153,7 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
-      blocked: root.mode === "add" && (frontField.activeFocus || backField.activeFocus || noteField.activeFocus)
+      blocked: (root.mode === "add" || root.mode === "decks") && (frontField.activeFocus || backField.activeFocus || noteField.activeFocus || pathField.activeFocus || deckField.activeFocus)
       onActivateRequested: root.activate()
       onCloseRequested: root.close()
       onTextKey: function(t) {
@@ -153,6 +165,8 @@ Panel {
         else if (key === "s") svc.play();
         else if (key === "u") svc.undo();
         else if (key === "a") root.showMode("add");
+        else if (key === "d") root.showMode("decks");
+        else if (key === "r") root.showMode("review");
       }
 
       Column {
@@ -165,7 +179,7 @@ Panel {
           spacing: Style.space(8)
 
           Text {
-            text: svc.deck
+            text: svc.studyTitle
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.title
@@ -205,7 +219,16 @@ Panel {
             onClicked: root.showMode("review")
           }
           Button {
-            text: "Add word  [a]"
+            text: "Decks"
+            bordered: true
+            selected: root.mode === "decks"
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            Layout.fillWidth: true
+            onClicked: root.showMode("decks")
+          }
+          Button {
+            text: "Add  [a]"
             iconText: root.glyphAdd
             bordered: true
             selected: root.mode === "add"
@@ -217,6 +240,121 @@ Panel {
         }
 
         PanelSeparator { foreground: root.foreground }
+
+        // --- decks ---
+        Column {
+          visible: root.mode === "decks"
+          width: parent.width
+          spacing: Style.space(8)
+
+          PanelSectionHeader { text: "DECKS"; foreground: root.foreground; fontFamily: root.fontFamily }
+
+          Repeater {
+            model: [{ name: "*", total: 0, new: 0, learning: 0, review: 0 }].concat(svc.decks)
+            Column {
+              id: deckRow
+              required property var modelData
+              width: column.width
+              spacing: Style.space(4)
+              readonly property bool all: modelData.name === "*"
+              readonly property int dueCount: modelData.new + modelData.learning + modelData.review
+              RowLayout {
+                width: parent.width
+                spacing: Style.space(6)
+                Button {
+                  Layout.fillWidth: true
+                  bordered: true
+                  leftAlign: true
+                  selected: svc.studyDeck === (deckRow.all ? "" : deckRow.modelData.name)
+                  text: (deckRow.all ? "All decks" : deckRow.modelData.name) + (deckRow.all ? "" : "   " + deckRow.modelData.total + " cards, " + deckRow.dueCount + " due")
+                  foreground: root.foreground
+                  fontFamily: root.fontFamily
+                  onClicked: { svc.useDeck(deckRow.modelData.name); root.showMode("review"); }
+                }
+                PanelActionButton {
+                  visible: !deckRow.all
+                  iconText: root.glyphTrash
+                  tooltipText: "Delete deck"
+                  foreground: root.foreground
+                  hoverColor: root.urgent
+                  fontFamily: root.fontFamily
+                  onClicked: root.confirmDelete = deckRow.modelData.name
+                }
+              }
+              RowLayout {
+                visible: root.confirmDelete === deckRow.modelData.name
+                width: parent.width
+                spacing: Style.space(6)
+                Text {
+                  Layout.fillWidth: true
+                  text: "Delete " + deckRow.modelData.total + " cards and their history?"
+                  color: root.urgent
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.bodySmall
+                  wrapMode: Text.WordWrap
+                }
+                Button { text: "Delete"; bordered: true; foreground: root.urgent; fontFamily: root.fontFamily
+                  onClicked: { svc.deleteDeck(deckRow.modelData.name); root.confirmDelete = ""; } }
+                Button { text: "Keep"; bordered: true; foreground: root.foreground; fontFamily: root.fontFamily
+                  onClicked: root.confirmDelete = "" }
+              }
+            }
+          }
+
+          PanelSeparator { foreground: root.foreground }
+          PanelSectionHeader { text: "IMPORT"; foreground: root.foreground; fontFamily: root.fontFamily }
+
+          Text {
+            visible: svc.files.length > 0
+            width: parent.width
+            text: "In Downloads (click to choose):"
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+          }
+          Repeater {
+            model: svc.files
+            Button {
+              required property var modelData
+              width: column.width
+              bordered: true
+              leftAlign: true
+              text: modelData.name + "  (" + modelData.mb + " MB)"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              onClicked: pathField.text = modelData.path
+            }
+          }
+          TextField {
+            id: pathField
+            width: parent.width
+            placeholderText: "Path to an Anki .apkg or a .tsv/.csv file"
+            foreground: root.foreground
+            font.family: root.fontFamily
+            KeyNavigation.tab: deckField
+            onAccepted: deckField.forceActiveFocus()
+            Keys.onEscapePressed: root.showMode("review")
+          }
+          TextField {
+            id: deckField
+            width: parent.width
+            placeholderText: "Import into deck (new name creates a deck)"
+            foreground: root.foreground
+            font.family: root.fontFamily
+            KeyNavigation.tab: pathField
+            onAccepted: root.startImport()
+            Keys.onEscapePressed: root.showMode("review")
+          }
+          Button {
+            width: parent.width
+            text: "Import"
+            bordered: true
+            enabled: !svc.busy && pathField.text.trim() !== "" && deckField.text.trim() !== ""
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onClicked: root.startImport()
+          }
+        }
 
         // --- review ---
         Column {
@@ -415,7 +553,7 @@ Panel {
         Text {
           visible: root.mode === "review"
           width: parent.width
-          text: "space show/pass  1-4 rate (f fail, p pass, e easy)  s sound  u undo  a add  esc close"
+          text: "space show/pass  1-4 rate (f fail, p pass, e easy)  s sound  u undo  a add  d decks  esc close"
           color: root.dim
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption

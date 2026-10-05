@@ -15,7 +15,17 @@ omarchy plugin enable oleh.flashcards
 ```
 
 The folder name must stay `oleh.flashcards`. If the widget does not show,
-run `omarchy restart shell`.
+run `omarchy restart shell`. Enabling the plugin adds one entry to
+`~/.config/omarchy/shell.json`. Nothing else in your configuration changes.
+
+## Remove
+
+```bash
+omarchy plugin remove oleh.flashcards
+```
+
+This removes the plugin and its `shell.json` entry. Your cards and audio stay
+in `~/.local/share/omarchy-flashcards/`. Delete that folder to remove them.
 
 ## Use
 
@@ -31,11 +41,20 @@ run `omarchy restart shell`.
 | `s` | play pronunciation |
 | `u` | undo last answer |
 | `a` | add a word |
+| `d` / `r` | decks tab / review tab |
 | `esc` | close |
 
 Scheduling follows Anki: 1 and 10 minute learning steps, then days, weeks and
 months. New cards are limited to 20 a day. The panel offers 10 more when the
 limit is reached.
+
+## Decks and import
+
+- **Decks** tab: choose the deck to study (or all decks), delete a deck, and
+  import a file. Files in `~/Downloads` are listed; click one, name the deck,
+  press Import.
+- The panel keeps the next 20 cards in memory, so the next card appears at
+  once. Answers are saved in the background.
 
 ## Add words
 
@@ -62,7 +81,12 @@ text is sent to Google once per card and cached in
 
 Set in the widget entry of `~/.config/omarchy/shell.json`: `deck`, `lang`
 (speech language code, for example `no`, `sv`, `de`), `barLabel` (`Word`,
-`Count`, `Icon`), `newPerDay`, `autoplay`, `popupEveryMinutes`.
+`Count`, `Icon`), `newPerDay`, `queueSize` (cards kept ready, default 20), `autoplay`, `popupEveryMinutes`.
+
+## Dependencies and license
+
+`python3` (3.14 or later for newer Anki exports), `mpv` or `ffplay` for
+audio, `espeak-ng` optional. No Python packages. MIT license, see `LICENSE`.
 
 ## Tests
 

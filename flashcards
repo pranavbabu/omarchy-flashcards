@@ -45,6 +45,7 @@ DEFAULT_NEW_PER_DAY = 20
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS decks (name TEXT PRIMARY KEY, lang TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS cards (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   deck TEXT NOT NULL,
@@ -191,16 +192,23 @@ def counts(db, now, deck, limit):
     }
 
 
-def pick_next(db, now, deck, limit):
+def pick_queue(db, now, deck, limit, count):
+    """Up to `count` cards in study order: learning, then reviews, then new, then learn-ahead."""
     where, args = ("AND deck = ?", [deck]) if deck else ("", [])
-    one = lambda extra, a: db.execute(
-        "SELECT * FROM cards WHERE suspended = 0 %s %s LIMIT 1" % (where, extra), args + a).fetchone()
-    row = one("AND state IN (?, ?) AND due <= ? ORDER BY due", [LEARNING, RELEARNING, now])
-    row = row or one("AND state = ? AND due <= ? ORDER BY due", [REVIEW, now])
-    if not row and new_budget(db, now, limit) > 0:
-        row = one("AND state = ? ORDER BY id", [NEW])
-    row = row or one("AND state IN (?, ?) AND due <= ? ORDER BY due", [LEARNING, RELEARNING, now + LEARN_AHEAD])
-    return row
+    rows = []
+
+    def take(extra, a, cap):
+        if cap <= 0:
+            return
+        rows.extend(db.execute(
+            "SELECT * FROM cards WHERE suspended = 0 %s %s LIMIT ?" % (where, extra), args + a + [cap]).fetchall())
+
+    take("AND state IN (?, ?) AND due <= ? ORDER BY due", [LEARNING, RELEARNING, now], count)
+    take("AND state = ? AND due <= ? ORDER BY due", [REVIEW, now], count - len(rows))
+    take("AND state = ? ORDER BY id", [NEW], min(count - len(rows), new_budget(db, now, limit)))
+    if not rows:
+        take("AND state IN (?, ?) AND due <= ? ORDER BY due", [LEARNING, RELEARNING, now + LEARN_AHEAD], count)
+    return rows
 
 
 def next_due_in(db, now, deck):
@@ -219,16 +227,17 @@ def lang_of(db, deck):
 
 def cmd_next(a, db, now):
     limit = a.new_per_day
-    row = pick_next(db, now, a.deck, limit)
-    out = {"card": None, "counts": counts(db, now, a.deck, limit),
+    rows = pick_queue(db, now, a.deck, limit, max(1, a.count))
+    out = {"card": None, "cards": [], "counts": counts(db, now, a.deck, limit),
            "total": db.execute("SELECT COUNT(*) FROM cards").fetchone()[0],
            "next_due_in": next_due_in(db, now, a.deck)}
-    if row:
+    for row in rows:
         card = row_dict(row)
         card["lang"] = lang_of(db, card["deck"])
         card["preview"] = {str(r): fmt_interval(preview_delay(card, r, now)) for r in (AGAIN, HARD, GOOD, EASY)}
-        out["card"] = card
-    where, args = ("AND deck = ?", [deck]) if (deck := a.deck) else ("", [])
+        out["cards"].append(card)
+    out["card"] = out["cards"][0] if out["cards"] else None
+    where, args = ("AND deck = ?", [a.deck]) if a.deck else ("", [])
     out["new_waiting"] = db.execute("SELECT COUNT(*) FROM cards WHERE suspended = 0 AND state = ? %s" % where,
                                     [NEW] + args).fetchone()[0]
     out["due"] = sum(out["counts"].values())
@@ -495,6 +504,49 @@ def cmd_unsuspend(a, db, now):
     return {"ok": True, "restored": cur.rowcount}
 
 
+def get_meta(db, key):
+    row = db.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def cmd_decks(a, db, now):
+    out = []
+    for d in db.execute("SELECT name, lang FROM decks ORDER BY name"):
+        c = counts(db, now, d["name"], a.new_per_day)
+        n = db.execute("SELECT COUNT(*), COALESCE(SUM(suspended), 0) FROM cards WHERE deck = ?", (d["name"],)).fetchone()
+        out.append({"name": d["name"], "lang": d["lang"], "total": n[0], "suspended": n[1], **c})
+    return {"decks": out, "active": get_meta(db, "deck")}
+
+
+def cmd_use_deck(a, db, now):
+    if a.name != "*" and not db.execute("SELECT 1 FROM decks WHERE name = ?", (a.name,)).fetchone():
+        raise CliError("no deck named %s" % a.name)
+    db.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('deck', ?)", (a.name,))
+    return {"ok": True}
+
+
+def cmd_delete_deck(a, db, now):
+    ids = [r[0] for r in db.execute("SELECT id FROM cards WHERE deck = ?", (a.name,))]
+    if not ids and not db.execute("SELECT 1 FROM decks WHERE name = ?", (a.name,)).fetchone():
+        raise CliError("no deck named %s" % a.name)
+    db.executemany("DELETE FROM revlog WHERE card_id = ?", [(i,) for i in ids])
+    db.execute("DELETE FROM cards WHERE deck = ?", (a.name,))
+    db.execute("DELETE FROM decks WHERE name = ?", (a.name,))
+    if get_meta(db, "deck") == a.name:
+        db.execute("DELETE FROM meta WHERE key = 'deck'")
+    return {"ok": True, "deleted": len(ids)}
+
+
+def cmd_find_files(a, db, now):
+    import glob
+    found = []
+    for pattern in ("*.apkg", "*.tsv", "*.csv", "*.txt"):
+        found += glob.glob(os.path.join(os.path.expanduser(a.dir), pattern))
+    found.sort(key=os.path.getmtime, reverse=True)
+    return {"files": [{"name": os.path.basename(p), "path": p, "mb": round(os.path.getsize(p) / 1e6, 1)}
+                      for p in found[:8]]}
+
+
 def cmd_list(a, db, now):
     q = "%" + (a.query or "") + "%"
     rows = db.execute("SELECT * FROM cards WHERE (front LIKE ? OR back LIKE ?) ORDER BY id DESC LIMIT ?",
@@ -608,9 +660,10 @@ def build_parser():
     p.add_argument("--now", type=int, default=None, help=argparse.SUPPRESS)
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    s = sub.add_parser("next", help="next card due, with counts and answer previews")
+    s = sub.add_parser("next", help="next cards due, with counts and answer previews")
     s.add_argument("--deck")
     s.add_argument("--new-per-day", type=int, default=DEFAULT_NEW_PER_DAY)
+    s.add_argument("--count", type=int, default=1, help="how many upcoming cards to return")
     s.set_defaults(fn=cmd_next)
 
     s = sub.add_parser("answer", help="record an answer: 1 again, 2 hard, 3 good, 4 easy")
@@ -651,6 +704,22 @@ def build_parser():
     s.add_argument("--max-rank", type=int, default=800, help="words up to this frequency rank count as easy")
     s.add_argument("--dry-run", action="store_true")
     s.set_defaults(fn=cmd_skip_easy)
+
+    s = sub.add_parser("decks", help="list decks with counts and the active deck")
+    s.add_argument("--new-per-day", type=int, default=DEFAULT_NEW_PER_DAY)
+    s.set_defaults(fn=cmd_decks)
+
+    s = sub.add_parser("use-deck", help="choose the deck to study; '*' studies every deck")
+    s.add_argument("name")
+    s.set_defaults(fn=cmd_use_deck)
+
+    s = sub.add_parser("delete-deck", help="delete a deck and all of its cards")
+    s.add_argument("name")
+    s.set_defaults(fn=cmd_delete_deck)
+
+    s = sub.add_parser("find-files", help="list importable files in a folder")
+    s.add_argument("--dir", default="~/Downloads")
+    s.set_defaults(fn=cmd_find_files)
 
     sub.add_parser("unsuspend", help="bring back every suspended card").set_defaults(fn=cmd_unsuspend)
 

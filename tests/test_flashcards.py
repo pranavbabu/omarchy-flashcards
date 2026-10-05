@@ -114,6 +114,40 @@ class Cli(unittest.TestCase):
         self.now += fc.DAY
         self.assertEqual(self.run_cli("next", "--new-per-day", "2")["counts"]["new"], 2)
 
+    def test_next_returns_a_stack_in_study_order(self):
+        for i in range(30):
+            self.run_cli("add", "ord%02d" % i, "word%d" % i)
+        out = self.run_cli("next", "--count", "20", "--new-per-day", "25")
+        self.assertEqual([c["front"] for c in out["cards"]], ["ord%02d" % i for i in range(20)])
+        self.assertEqual(out["card"]["front"], "ord00")
+        self.run_cli("answer", str(out["cards"][0]["id"]), "1")
+        self.now += 61
+        out = self.run_cli("next", "--count", "20", "--new-per-day", "25")
+        self.assertEqual(out["cards"][0]["front"], "ord00")  # the failed card comes back first
+        self.assertEqual(len(out["cards"]), 20)
+        self.assertEqual(len({c["id"] for c in out["cards"]}), 20)
+
+    def test_deck_management(self):
+        self.run_cli("add", "hund", "dog", "--deck", "Norwegian")
+        self.run_cli("add", "hund", "Hund", "--deck", "German", "--lang", "de")
+        decks = self.run_cli("decks")
+        self.assertEqual([(d["name"], d["total"], d["new"]) for d in decks["decks"]], [("German", 1, 1), ("Norwegian", 1, 1)])
+        self.assertIsNone(decks["active"])
+        self.run_cli("use-deck", "German")
+        self.assertEqual(self.run_cli("decks")["active"], "German")
+        self.assertIn("no deck", self.run_cli("use-deck", "Nope", ok=False)["error"])
+        self.assertEqual(self.run_cli("next", "--deck", "German")["card"]["lang"], "de")
+        self.assertEqual(self.run_cli("delete-deck", "German")["deleted"], 1)
+        out = self.run_cli("decks")
+        self.assertEqual(([d["name"] for d in out["decks"]], out["active"]), (["Norwegian"], None))
+
+    def test_find_files_lists_importable_files_newest_first(self):
+        for name in ("a.tsv", "b.apkg", "ignore.pdf"):
+            open(os.path.join(self.tmp.name, name), "w").close()
+        os.utime(os.path.join(self.tmp.name, "a.tsv"), (1_000_000_000, 1_000_000_000))
+        names = [f["name"] for f in self.run_cli("find-files", "--dir", self.tmp.name)["files"]]
+        self.assertEqual(names, ["b.apkg", "a.tsv"])
+
     def test_limit_reached_reports_waiting_new_cards(self):
         for i in range(3):
             self.run_cli("add", "ord%d" % i, "word%d" % i)
