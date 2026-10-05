@@ -8,8 +8,8 @@ import qs.Ui
 
 Panel {
   id: root
-  moduleName: "oleh.flashcards"
-  ipcTarget: "oleh.flashcards"
+  moduleName: "pranavbabu.flashcards"
+  ipcTarget: "pranavbabu.flashcards"
   manageIpc: false
 
   // Glyphs are built from codepoints so no private-use characters live in this file.

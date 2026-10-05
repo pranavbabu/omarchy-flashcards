@@ -9,19 +9,19 @@ answer, hear the pronunciation, then pass or fail the card.
 Requires Omarchy with shell plugins, `python3`, and `mpv` (or `ffplay`).
 
 ```bash
-git clone https://github.com/pranavbabu/omarchy-flashcards ~/.config/omarchy/plugins/oleh.flashcards
+git clone https://github.com/pranavbabu/omarchy-flashcards ~/.config/omarchy/plugins/pranavbabu.flashcards
 omarchy-shell shell rescanPlugins
-omarchy plugin enable oleh.flashcards
+omarchy plugin enable pranavbabu.flashcards
 ```
 
-The folder name must stay `oleh.flashcards`. If the widget does not show,
+The folder name must stay `pranavbabu.flashcards`. If the widget does not show,
 run `omarchy restart shell`. Enabling the plugin adds one entry to
 `~/.config/omarchy/shell.json`. Nothing else in your configuration changes.
 
 ## Remove
 
 ```bash
-omarchy plugin remove oleh.flashcards
+omarchy plugin remove pranavbabu.flashcards
 ```
 
 This removes the plugin and its `shell.json` entry. Your cards and audio stay
@@ -29,7 +29,7 @@ in `~/.local/share/omarchy-flashcards/`. Delete that folder to remove them.
 
 ## Use
 
-1. Click the word in the bar, or run `omarchy-shell oleh.flashcards toggle`.
+1. Click the word in the bar, or run `omarchy-shell pranavbabu.flashcards toggle`.
 2. Empty deck: press **Import starter Norwegian words** (191 words).
 3. Study with the keyboard:
 
