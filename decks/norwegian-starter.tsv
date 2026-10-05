@@ -1,0 +1,193 @@
+#separator:tab
+#columns:front	back	note
+hei	hello	Hei! Hvordan har du det?
+ha det	goodbye	Ha det bra!
+takk	thank you	Tusen takk for hjelpen.
+vær så snill	please	Kan du hjelpe meg, vær så snill?
+unnskyld	sorry / excuse me	Unnskyld, hvor er toalettet?
+ja	yes	Ja, takk.
+nei	no	Nei, det er ikke riktig.
+god morgen	good morning	God morgen! Har du sovet godt?
+god natt	good night	God natt og sov godt.
+god kveld	good evening	God kveld, velkommen!
+velkommen	welcome	Velkommen til Norge.
+hvordan har du det?	how are you?	Hei, hvordan har du det?
+jeg heter	my name is	Jeg heter Oleh.
+jeg forstår ikke	I do not understand	Beklager, jeg forstår ikke.
+snakker du engelsk?	do you speak English?	Unnskyld, snakker du engelsk?
+jeg lærer norsk	I am learning Norwegian	Jeg lærer norsk hver dag.
+hva	what	Hva heter du?
+hvem	who	Hvem er det?
+hvor	where	Hvor bor du?
+når	when	Når kommer du?
+hvorfor	why	Hvorfor er du sen?
+hvordan	how	Hvordan sier man det på norsk?
+hvilken	which	Hvilken bok vil du ha?
+jeg	I	Jeg er trøtt.
+du	you	Du er snill.
+han	he	Han jobber i Oslo.
+hun	she	Hun er lærer.
+vi	we	Vi skal på kino.
+dere	you (plural)	Dere er velkomne.
+de	they	De bor i Bergen.
+en mann	a man	En mann står ved døren.
+en kvinne	a woman	En kvinne leser avis.
+et barn	a child	Et barn leker ute.
+en venn	a friend	Han er en god venn.
+en familie	a family	Familien min bor i Ukraina.
+en mor	a mother	Moren min er lærer.
+en far	a father	Faren min er ingeniør.
+en bror	a brother	Jeg har én bror.
+en søster	a sister	Søsteren min er yngre.
+et hus	a house	Huset er stort og hvitt.
+en leilighet	an apartment	Vi leier en leilighet i sentrum.
+et rom	a room	Rommet er lyst.
+et kjøkken	a kitchen	Vi spiser på kjøkkenet.
+en dør	a door	Lukk døren, takk.
+et vindu	a window	Åpne vinduet litt.
+en by	a city	Oslo er en fin by.
+en gate	a street	Gaten er stille.
+en bil	a car	Bilen er rød.
+en buss	a bus	Bussen går hvert tiende minutt.
+et tog	a train	Toget er forsinket.
+en sykkel	a bicycle	Jeg sykler til jobb.
+vann	water	Kan jeg få et glass vann?
+brød	bread	Vi kjøper brød i butikken.
+melk	milk	Jeg tar melk i kaffen.
+kaffe	coffee	Jeg drikker kaffe hver morgen.
+te	tea	Vil du ha te?
+et egg	an egg	Jeg spiser et egg til frokost.
+ost	cheese	Brunost er typisk norsk.
+fisk	fish	Vi spiser fisk i dag.
+kjøtt	meat	Han spiser ikke kjøtt.
+en frukt	a fruit	Jeg liker frukt.
+et eple	an apple	Eplet er søtt.
+frokost	breakfast	Vi spiser frokost klokka sju.
+lunsj	lunch	Skal vi ta lunsj sammen?
+middag	dinner	Middagen er klar.
+å spise	to eat	Jeg vil spise nå.
+å drikke	to drink	Hva vil du drikke?
+å være	to be	Jeg skal være hjemme.
+å ha	to have	Jeg har en katt.
+å gå	to go / to walk	Jeg går på jobb.
+å komme	to come	Kommer du i morgen?
+å se	to see	Jeg ser deg.
+å høre	to hear	Jeg hører musikk.
+å snakke	to speak	Jeg snakker litt norsk.
+å si	to say	Hva sa du?
+å gjøre	to do	Hva gjør du?
+å ville	to want	Jeg vil ha kaffe.
+å kunne	can / to be able to	Jeg kan svømme.
+å måtte	must / to have to	Jeg må gå nå.
+å skulle	shall / to be going to	Vi skal reise i morgen.
+å bo	to live (reside)	Jeg bor i Oslo.
+å jobbe	to work	Hun jobber på sykehus.
+å lese	to read	Jeg leser en bok.
+å skrive	to write	Han skriver en e-post.
+å kjøpe	to buy	Jeg skal kjøpe melk.
+å betale	to pay	Kan jeg betale med kort?
+å hjelpe	to help	Kan du hjelpe meg?
+å vente	to wait	Vent litt, takk.
+å trenge	to need	Jeg trenger hvile.
+å elske	to love	Jeg elsker fjell.
+å like	to like	Jeg liker å gå tur.
+å tenke	to think	Jeg tenker på deg.
+å vite	to know (a fact)	Jeg vet ikke.
+å kjenne	to know (a person)	Jeg kjenner henne godt.
+å forstå	to understand	Forstår du norsk?
+å lære	to learn	Jeg lærer nye ord.
+å bruke	to use	Jeg bruker mye tid på det.
+å åpne	to open	Kan du åpne døren?
+å stenge	to close	Butikken stenger klokka seks.
+å sove	to sleep	Barna sover allerede.
+å våkne	to wake up	Jeg våkner tidlig.
+å reise	to travel	Vi skal reise til Tromsø.
+stor	big	Det er et stort hus.
+liten	small	Katten er liten.
+god	good	Det var en god dag.
+dårlig	bad	Været er dårlig i dag.
+ny	new	Jeg har en ny jobb.
+gammel	old	Bilen er gammel.
+fin	nice / fine	Det er en fin dag.
+pen	pretty	Hun har en pen kjole.
+vanskelig	difficult	Norsk er ikke så vanskelig.
+lett	easy / light	Oppgaven var lett.
+varm	warm	Kaffen er varm.
+kald	cold	Det er kaldt ute.
+glad	happy	Jeg er glad for å se deg.
+trist	sad	Han ser trist ut.
+trøtt	tired	Jeg er veldig trøtt.
+sulten	hungry	Jeg er sulten.
+tørst	thirsty	Er du tørst?
+rask	fast	Toget er raskt.
+sakte	slowly	Snakk sakte, takk.
+mye	much / a lot	Jeg har mye å gjøre.
+lite	little	Det er lite melk igjen.
+mange	many	Det er mange folk her.
+alltid	always	Han kommer alltid for sent.
+aldri	never	Jeg har aldri vært i Bergen.
+ofte	often	Vi går ofte på tur.
+noen ganger	sometimes	Noen ganger tar jeg bussen.
+i dag	today	Hva skal du gjøre i dag?
+i morgen	tomorrow	Vi sees i morgen.
+i går	yesterday	I går regnet det.
+nå	now	Jeg kommer nå.
+snart	soon	Vi er snart framme.
+senere	later	Vi snakkes senere.
+en dag	a day	Det er en fin dag.
+en uke	a week	Jeg har ferie neste uke.
+en måned	a month	Det er en måned til jul.
+et år	a year	Jeg har bodd her i to år.
+en time	an hour	Møtet varer i en time.
+mandag	Monday	Jeg jobber på mandag.
+tirsdag	Tuesday	Tirsdag har jeg norskkurs.
+onsdag	Wednesday	Onsdag er jeg hjemme.
+torsdag	Thursday	Torsdag er det fotball.
+fredag	Friday	Endelig fredag!
+lørdag	Saturday	Lørdag går vi på tur.
+søndag	Sunday	Søndag er en hviledag.
+en	one	Jeg har én katt.
+to	two	To kaffe, takk.
+tre	three	Det er tre barn her.
+fire	four	Klokka er fire.
+fem	five	Fem minutter igjen.
+seks	six	Vi er seks personer.
+sju	seven	Jeg står opp klokka sju.
+åtte	eight	Åtte timer på jobb.
+ni	nine	Ni av ti liker det.
+ti	ten	Ti kroner, takk.
+hundre	a hundred	Det koster hundre kroner.
+rød	red	Bilen min er rød.
+blå	blue	Himmelen er blå.
+grønn	green	Gresset er grønt.
+svart	black	Katten er svart.
+hvit	white	Snøen er hvit.
+en skole	a school	Barna går på skolen.
+en jobb	a job	Jeg liker jobben min.
+en butikk	a shop	Butikken er åpen.
+et sykehus	a hospital	Hun jobber på sykehuset.
+en lege	a doctor	Jeg har time hos legen.
+penger	money	Jeg har ikke penger nå.
+tid	time	Jeg har ikke tid.
+vær	weather	Hvordan er været i dag?
+regn	rain	Det er mye regn i Bergen.
+snø	snow	Det er snø på fjellet.
+sol	sun	Solen skinner.
+et fjell	a mountain	Vi går opp på fjellet.
+et hav	a sea	Havet er kaldt.
+en skog	a forest	Vi går tur i skogen.
+en tur	a trip / a walk	Vi tar en tur i skogen.
+hjem	home (direction)	Jeg skal hjem nå.
+hjemme	at home	Jeg er hjemme i dag.
+her	here	Kom hit! Jeg er her.
+der	there	Boken ligger der.
+og	and	Jeg liker te og kaffe.
+men	but	Jeg vil, men jeg kan ikke.
+eller	or	Vil du ha te eller kaffe?
+fordi	because	Jeg er trøtt fordi jeg sov dårlig.
+med	with	Jeg går med deg.
+uten	without	Jeg tar kaffe uten sukker.
+til	to	Jeg skal til Oslo.
+fra	from	Jeg er fra Ukraina.
+på	on / at	Boken ligger på bordet.
+i	in	Jeg bor i Norge.

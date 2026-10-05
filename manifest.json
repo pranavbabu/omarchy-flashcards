@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "oleh.flashcards",
+  "name": "Flashcards",
+  "version": "0.1.0",
+  "author": "Oleh Kupriianov",
+  "license": "MIT",
+  "description": "Anki-style spaced-repetition word trainer in the Omarchy bar, with pronunciation audio and translations. Norwegian by default, any language you add.",
+  "kinds": ["bar-widget"],
+  "activation": "on-demand",
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Flashcards",
+    "description": "Shows the next due word in the bar. Click to see the answer, hear the pronunciation, and pass or fail the card.",
+    "category": "Learning",
+    "aliases": ["anki", "norwegian", "language", "vocabulary", "words", "srs"],
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "deck": "Norwegian",
+      "lang": "no",
+      "barLabel": "Word",
+      "newPerDay": 20,
+      "autoplay": true,
+      "popupEveryMinutes": 0
+    },
+    "schema": [
+      { "key": "deck", "type": "string", "label": "Deck", "defaultValue": "Norwegian", "description": "Name of the deck to study. New cards are added to this deck." },
+      { "key": "lang", "type": "string", "label": "Speech language code", "defaultValue": "no", "description": "Language code for pronunciation audio, for example no, sv, de, fr, uk." },
+      { "key": "barLabel", "type": "enum", "label": "Bar label", "options": ["Word", "Count", "Icon"], "defaultValue": "Word", "description": "Show the current word, the number of due cards, or only the icon." },
+      { "key": "newPerDay", "type": "integer", "label": "New cards per day", "min": 0, "max": 500, "step": 5, "defaultValue": 20 },
+      { "key": "autoplay", "type": "boolean", "label": "Play pronunciation automatically", "defaultValue": true, "description": "Play the audio when a card appears in the open panel." },
+      { "key": "popupEveryMinutes", "type": "integer", "label": "Open the panel every N minutes (0 = never)", "min": 0, "max": 240, "step": 5, "defaultValue": 0, "description": "When cards are due, open the panel on this interval so you can answer without clicking the bar." }
+    ]
+  }
+}
