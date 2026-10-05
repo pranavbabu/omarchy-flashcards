@@ -244,6 +244,33 @@ class Cli(unittest.TestCase):
         self.assertEqual(open(card["audio"], "rb").read(), b"A" * 300)
         self.assertEqual(self.run_cli("audio", str(card["id"]))["engine"], "file")
 
+    def test_import_apkg_images_and_modes(self):
+        png = b"\x89PNG\r\n\x1a\n" + b"P" * 100
+        path = self.make_apkg("i.apkg", [
+            ['<img src="pic1.png">', "hund", ""],
+            ["katt<br><img src='pic1.png'>", "cat", ""],
+            ["bil", "car<img src=pic1.png>", ""],
+            ['<img src="nope.png">', "lost", ""],
+        ], {"pic1.png": png})
+        out = self.run_cli("import", path, "--no-prefetch")
+        self.assertEqual((out["added"], out["skipped"]), (3, 1))
+        cards = {c["front"]: c for c in self.run_cli("list")["cards"]}
+        self.assertEqual((cards["hund"]["back"], cards["hund"]["image_mode"]), ("", "prompt"))
+        self.assertEqual(cards["katt"]["image_mode"], "front")
+        self.assertEqual((cards["bil"]["back"], cards["bil"]["image_mode"]), ("car", "answer"))
+        with open(cards["hund"]["image"], "rb") as fh:
+            self.assertEqual(fh.read(), png)
+        self.assertEqual(self.run_cli("next")["card"]["image_mode"], "prompt")
+
+    def test_add_card_with_image_and_missing_image(self):
+        img = os.path.join(self.tmp.name, "p.png")
+        with open(img, "wb") as fh:
+            fh.write(b"x")
+        self.run_cli("add", "sol", "sun", "--image", img)
+        card = self.run_cli("next")["card"]
+        self.assertEqual((card["image"], card["image_mode"]), (img, "front"))
+        self.assertIn("image not found", self.run_cli("add", "a", "b", "--image", "/nope.png", ok=False)["error"])
+
     def test_import_apkg_zstd_collection(self):
         from compression import zstd
         import zipfile

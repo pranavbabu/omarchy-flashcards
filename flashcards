@@ -27,6 +27,7 @@ import urllib.request
 HOME = os.environ.get("FLASHCARDS_HOME") or os.path.expanduser("~/.local/share/omarchy-flashcards")
 DB_PATH = os.path.join(HOME, "cards.db")
 AUDIO_DIR = os.path.join(HOME, "audio")
+IMAGE_DIR = os.path.join(HOME, "images")
 
 NEW, LEARNING, REVIEW, RELEARNING = 0, 1, 2, 3
 AGAIN, HARD, GOOD, EASY = 1, 2, 3, 4
@@ -63,6 +64,8 @@ CREATE TABLE IF NOT EXISTS cards (
   suspended INTEGER NOT NULL DEFAULT 0,
   created INTEGER NOT NULL,
   rank INTEGER,
+  image TEXT NOT NULL DEFAULT '',
+  image_mode TEXT NOT NULL DEFAULT '',
   UNIQUE (deck, front)
 );
 CREATE INDEX IF NOT EXISTS cards_due ON cards (suspended, state, due);
@@ -76,7 +79,7 @@ CREATE TABLE IF NOT EXISTS revlog (
 );
 """
 CARD_COLS = ("id", "deck", "front", "back", "note", "audio", "state", "step", "due",
-             "interval", "ease", "reps", "lapses", "suspended", "created", "rank")
+             "interval", "ease", "reps", "lapses", "suspended", "created", "rank", "image", "image_mode")
 
 
 class CliError(Exception):
@@ -88,8 +91,10 @@ def connect():
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
     db.executescript(SCHEMA)
-    if "rank" not in {r["name"] for r in db.execute("PRAGMA table_info(cards)")}:
-        db.execute("ALTER TABLE cards ADD COLUMN rank INTEGER")
+    have = {r["name"] for r in db.execute("PRAGMA table_info(cards)")}
+    for column, ddl in (("rank", "INTEGER"), ("image", "TEXT NOT NULL DEFAULT ''"), ("image_mode", "TEXT NOT NULL DEFAULT ''")):
+        if column not in have:
+            db.execute("ALTER TABLE cards ADD COLUMN %s %s" % (column, ddl))
     return db
 
 
@@ -293,10 +298,11 @@ def ensure_deck(db, deck, lang):
         db.execute("UPDATE decks SET lang = ? WHERE name = ?", (lang, deck))
 
 
-def insert_card(db, deck, front, back, note, audio, now, rank=None):
+def insert_card(db, deck, front, back, note, audio, now, rank=None, image="", image_mode=""):
     cur = db.execute(
-        "INSERT OR IGNORE INTO cards (deck, front, back, note, audio, ease, created, rank) VALUES (?,?,?,?,?,?,?,?)",
-        (deck, front.strip(), back.strip(), note.strip(), audio.strip(), START_EASE, now, rank))
+        "INSERT OR IGNORE INTO cards (deck, front, back, note, audio, ease, created, rank, image, image_mode) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (deck, front.strip(), back.strip(), note.strip(), audio.strip(), START_EASE, now, rank, image, image_mode))
     if not cur.rowcount and rank is not None:
         db.execute("UPDATE cards SET rank = ? WHERE deck = ? AND front = ? AND rank IS NULL",
                    (rank, deck, front.strip()))
@@ -307,7 +313,10 @@ def cmd_add(a, db, now):
     if not a.front.strip() or not a.back.strip():
         raise CliError("front and back must not be empty")
     ensure_deck(db, a.deck, a.lang)
-    cid = insert_card(db, a.deck, a.front, a.back, a.note, a.audio, now)
+    image = os.path.expanduser(a.image)
+    if image and not os.path.isfile(image):
+        raise CliError("image not found: %s" % image)
+    cid = insert_card(db, a.deck, a.front, a.back, a.note, a.audio, now, image=image, image_mode="front" if image else "")
     if cid is None:
         raise CliError("'%s' is already in deck %s" % (a.front.strip(), a.deck))
     return {"ok": True, "id": cid}
@@ -399,8 +408,15 @@ def _resolve(names, spec, include, exclude=()):
 NOISE = (r"audio", r"ipa", r"example", r"index", r"class", r"inflect", r"dictionary", r"sound", r"article")
 
 
+IMG_RE = re.compile(r"""<img[^>]*?\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""", re.I)
+
+
+def _images(text):
+    return [html.unescape(next(g for g in m.groups() if g is not None)) for m in IMG_RE.finditer(text)]
+
+
 def read_apkg(path, front=None, back=None, note=None):
-    """Yield (front, back, note, sound_name_or_None, media_bytes_or_None) for each note."""
+    """Yield (front, back, note, sound, media, rank, image_name, image_bytes, image_mode) per note."""
     with zipfile.ZipFile(path) as z:
         members = set(z.namelist())
         raw = next((n for n in ("collection.anki21b", "collection.anki21", "collection.anki2") if n in members), None)
@@ -446,20 +462,39 @@ def read_apkg(path, front=None, back=None, note=None):
             sound = sound or next(iter(re.findall(r"\[sound:([^\]]+)\]", flds)), None)
             media = z.read(by_name[sound]) if sound in by_name else None
             rank = _plain(fields[rk]) if rk is not None else ""
-            yield word, meaning, _plain(fields[n]) if n is not None else "", sound, media, int(rank) if rank.isdigit() else None
+            image, image_bytes, image_mode = None, None, ""
+            for field_index in (f, b, *range(len(fnames))):
+                found = next((i for i in _images(fields[field_index]) if i in by_name or urllib.parse.unquote(i) in by_name), None)
+                if found:
+                    image = found if found in by_name else urllib.parse.unquote(found)
+                    image_bytes = z.read(by_name[image])
+                    image_mode = "front" if field_index == f else "answer"
+                    break
+            if image and not word and meaning:
+                word, meaning, image_mode = meaning, "", "prompt"
+            yield (word, meaning, _plain(fields[n]) if n is not None else "", sound, media,
+                   int(rank) if rank.isdigit() else None, image, image_bytes, image_mode)
 
 
 def import_apkg(a, db, now):
     ensure_deck(db, a.deck, a.lang)
     added = skipped = 0
-    for front, back, note, sound, media, rank in read_apkg(a.file, a.front, a.back, a.note):
+    for front, back, note, sound, media, rank, image_name, image_bytes, image_mode in read_apkg(a.file, a.front, a.back, a.note):
+        image = ""
+        if image_bytes:
+            image = os.path.join(IMAGE_DIR, hashlib.sha1(image_bytes).hexdigest()[:12] + "-" + re.sub(r"[^\w.-]", "_", image_name))
+            os.makedirs(IMAGE_DIR, exist_ok=True)
+            if not os.path.isfile(image):
+                with open(image, "wb") as fh:
+                    fh.write(image_bytes)
         audio = ""
         if media:
             audio = os.path.join(AUDIO_DIR, "anki", re.sub(r"[^\w.-]", "_", sound))
             os.makedirs(os.path.dirname(audio), exist_ok=True)
             with open(audio, "wb") as fh:
                 fh.write(media)
-        if not front or not back or insert_card(db, a.deck, front, back, note, audio, now, rank) is None:
+        if not front or (not back and image_mode != "prompt") or insert_card(
+                db, a.deck, front, back, note, audio, now, rank, image, image_mode if image else "") is None:
             skipped += 1
         else:
             added += 1
@@ -703,6 +738,7 @@ def build_parser():
     s.add_argument("back")
     s.add_argument("--note", default="")
     s.add_argument("--audio", default="", help="path to your own audio file")
+    s.add_argument("--image", default="", help="path to a picture shown with the card")
     s.add_argument("--deck", default="Norwegian")
     s.add_argument("--lang", default="no", help="speech language code, e.g. no, sv, de")
     s.set_defaults(fn=cmd_add)

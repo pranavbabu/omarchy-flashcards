@@ -47,7 +47,18 @@ Panel {
     return label + " " + word;
   }
 
-  function reveal() { revealed = true; }
+  readonly property bool pictureQuestion: card !== null && card.image_mode === "prompt"
+  readonly property bool imageShown: card !== null && card.image !== "" && (card.image_mode !== "answer" || revealed)
+
+  // Picture-only cards hide the word, so their audio waits for the reveal.
+  function autoplayNow() {
+    if (opened && mode === "review" && cardId >= 0 && !pictureQuestion && Boolean(setting("autoplay", true))) svc.play();
+  }
+
+  function reveal() {
+    revealed = true;
+    if (pictureQuestion && Boolean(setting("autoplay", true))) svc.play();
+  }
 
   function rate(value) {
     if (!card) return;
@@ -92,7 +103,7 @@ Panel {
 
   onCardIdChanged: {
     revealed = false;
-    if (opened && mode === "review" && cardId >= 0 && Boolean(setting("autoplay", true))) svc.play();
+    autoplayNow();
   }
 
   onOpenedChanged: if (opened) {
@@ -100,7 +111,7 @@ Panel {
     revealed = false;
     svc.refresh();
     Qt.callLater(function() { keyCatcher.forceActiveFocus(); });
-    if (cardId >= 0 && Boolean(setting("autoplay", true))) svc.play();
+    autoplayNow();
   }
 
   implicitWidth: button.implicitWidth
@@ -380,8 +391,9 @@ Panel {
           spacing: Style.space(10)
 
           Item {
+            visible: !root.pictureQuestion || root.revealed
             width: parent.width
-            height: frontRow.implicitHeight
+            height: visible ? frontRow.implicitHeight : 0
             RowLayout {
               id: frontRow
               anchors.horizontalCenter: parent.horizontalCenter
@@ -408,8 +420,18 @@ Panel {
             }
           }
 
+          Image {
+            visible: root.imageShown && status !== Image.Error
+            width: parent.width
+            height: visible ? Style.space(170) : 0
+            source: root.card && root.card.image !== "" ? "file://" + encodeURI(root.card.image) : ""
+            fillMode: Image.PreserveAspectFit
+            sourceSize.width: 800
+            asynchronous: true
+          }
+
           Text {
-            visible: root.revealed
+            visible: root.revealed && root.card && root.card.back !== ""
             width: parent.width
             text: root.card ? root.card.back : ""
             color: root.foreground
