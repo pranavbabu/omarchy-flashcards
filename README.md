@@ -4,6 +4,8 @@ Anki-style spaced-repetition word trainer for the Omarchy bar. Norwegian by
 default, any language works. The bar shows your next word. Click it, see the
 answer, hear the pronunciation, then pass or fail the card.
 
+<img width="627" height="541" alt="image" src="https://github.com/user-attachments/assets/37aaa9cc-628f-4848-b2cb-d76a91bc3007" />
+
 ## Install
 
 Requires Omarchy with shell plugins, a Rust toolchain (`cargo`, to build the
