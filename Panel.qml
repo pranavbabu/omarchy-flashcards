@@ -42,7 +42,7 @@ Panel {
     var label = glyphIcon;
     if (svc.due === 0 || barLabelMode === "Icon") return label;
     if (barLabelMode === "Count") return label + " " + svc.due;
-    var word = card ? String(card.front) : "";
+    var word = card ? String(card.front).replace(/</g, "\u2039") : "";
     if (word.length > 18) word = word.substring(0, 17) + "…";
     return label + " " + word;
   }
@@ -215,18 +215,21 @@ Panel {
           }
           Item { Layout.fillWidth: true }
           Text {
+            textFormat: Text.PlainText
             text: svc.counts["new"] + " new"
             color: svc.counts["new"] > 0 ? root.foreground : root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
           }
           Text {
+            textFormat: Text.PlainText
             text: svc.counts["learning"] + " learning"
             color: svc.counts["learning"] > 0 ? root.urgent : root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
           }
           Text {
+            textFormat: Text.PlainText
             text: svc.counts["review"] + " review"
             color: svc.counts["review"] > 0 ? root.foreground : root.dim
             font.family: root.fontFamily
@@ -314,6 +317,7 @@ Panel {
                 width: parent.width
                 spacing: Style.space(6)
                 Text {
+                  textFormat: Text.PlainText
                   Layout.fillWidth: true
                   text: "Delete " + deckRow.modelData.total + " cards and their history?"
                   color: root.urgent
@@ -333,6 +337,7 @@ Panel {
           PanelSectionHeader { text: "IMPORT"; foreground: root.foreground; fontFamily: root.fontFamily }
 
           Text {
+            textFormat: Text.PlainText
             visible: svc.files.length > 0
             width: parent.width
             text: "In Downloads (click to choose):"
@@ -400,6 +405,7 @@ Panel {
               width: Math.min(parent.width, implicitWidth)
               spacing: Style.space(10)
               Text {
+                textFormat: Text.PlainText
                 Layout.fillWidth: true
                 text: root.card ? root.card.front : ""
                 color: root.foreground
@@ -431,6 +437,7 @@ Panel {
           }
 
           Text {
+            textFormat: Text.PlainText
             visible: root.revealed && root.card && root.card.back !== ""
             width: parent.width
             text: root.card ? root.card.back : ""
@@ -442,6 +449,7 @@ Panel {
           }
 
           Text {
+            textFormat: Text.PlainText
             visible: root.revealed && root.card && root.card.note !== ""
             width: parent.width
             text: root.card ? root.card.note : ""
@@ -488,6 +496,7 @@ Panel {
           spacing: Style.space(10)
 
           Text {
+            textFormat: Text.PlainText
             width: parent.width
             text: svc.total === 0 ? "No words yet." : (svc.newWaiting > 0 && svc.counts["learning"] === 0 && svc.counts["review"] === 0 ? "Today's new-card limit is reached." : "Nothing due right now.")
             color: root.foreground
@@ -496,6 +505,7 @@ Panel {
             horizontalAlignment: Text.AlignHCenter
           }
           Text {
+            textFormat: Text.PlainText
             visible: svc.total > 0 && svc.dueText() !== ""
             width: parent.width
             text: "Next card in " + svc.dueText() + "."
@@ -531,6 +541,7 @@ Panel {
           spacing: Style.space(8)
 
           Text {
+            textFormat: Text.PlainText
             width: parent.width
             text: "Adds to deck: " + svc.deck
             color: root.dim
@@ -577,6 +588,7 @@ Panel {
             onClicked: root.submitCard()
           }
           Text {
+            textFormat: Text.PlainText
             width: parent.width
             text: "Pronunciation audio is fetched automatically. Bulk import: flashcards import words.tsv"
             color: root.dim
@@ -587,6 +599,7 @@ Panel {
         }
 
         Text {
+          textFormat: Text.PlainText
           visible: svc.status !== "" || svc.error !== ""
           width: parent.width
           text: svc.error !== "" ? svc.error : svc.status
@@ -597,6 +610,7 @@ Panel {
         }
 
         Text {
+          textFormat: Text.PlainText
           visible: root.mode === "review"
           width: parent.width
           text: "space show/pass  1-4 rate (f fail, p pass, e easy)  s sound  u undo  a add  d decks  [ ] switch deck  esc close"
